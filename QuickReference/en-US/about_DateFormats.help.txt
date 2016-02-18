@@ -1,0 +1,72 @@
+Output                            Command                                             Comment                                                
+------                            -------                                             -------                                                
+10                                Get-Date -UFormat %d                                                                                       
+Wed Feb 10 14:36:18 2016          get-date -UFormat %c                                 Date and time - abbreviated                           
+02/10/16                          get-date -UFormat %D                                 Date in mm/dd/yy format                               
+02/10/16                          get-date -UFormat %x                                 Date in standard format for locale                    
+20                                get-date -Uformat %C                                 Century (20 for 2006)                                 
+2016                              get-date -Uformat %Y                                 Year in 4-digit format                                
+16                                get-date -Uformat %y                                 Year in 2-digit format                                
+Feb                               get-date -Uformat %b                                 Month name - abbreviated                              
+February                          get-date -Uformat %B                                 Month name - full                                     
+02                                get-date -Uformat %m                                 Month number                                          
+5                                 get-date -Uformat %W                                 Week of the year (00-52)                              
+6                                 get-date -Uformat %V                                 Week of the year (01-53)                              
+Wed                               get-date -Uformat %a                                 Day of the week - abbreviated name                    
+Wednesday                         get-date -Uformat %A                                 Day of the week - full name                           
+3                                 get-date -Uformat %u                                 Day of the week - number (Monday = 1)                 
+10                                get-date -Uformat %d                                 Day of the month - 2 digits                           
+10                                get-date -Uformat %e                                 Day of the month - digit preceded by a space ( 5)     
+41                                get-date -Uformat %j                                 Day of the year                                       
+PM                                get-date -Uformat %p                                 AM or PM                                              
+02:36:18 PM                       get-date -Uformat %r                                 Time in 12-hour format                                
+14:36                             get-date -Uformat %R                                 Time in 24-hour format - no seconds                   
+14:36:18                          get-date -Uformat %T                                 Time in 24 hour format                                
++00                               get-date -Uformat %Z                                 Time zone offset from Universal Time Coordinate (UTC) 
+14                                get-date -Uformat %H                                 Hour in 24-hour format                                
+02                                get-date -Uformat %I                                 Hour in 12 hour format                                
+36                                get-date -Uformat %M                                 Minutes                                               
+18                                get-date -Uformat %S                                 Seconds                                               
+1455114978.59746                  get-date -Uformat %s                                 Seconds since Jan 1, 1970 00:00:00                    
+10/02/2016 14:36:18               Get-Date -DisplayHint Date                                                                                 
+10/02/2016 14:36                  Get-Date -Format g                                                                                         
+2016 / 02 / 10 / Wednesday / +00  Get-Date -UFormat "%Y / %m / %d / %A / %Z"                                                                 
+366                               (Get-Date -Year 2000 -Month 12 -Day 31).DayOfYear                                                          
+False                             $(get-date).IsDaylightSavingTime()                                                                         
+10/02/2016 14:36:18               $(get-date).ToUniversalTime()                                                                              
+10/02/2016 14:36:18               (Get-Date).ToString()                                                                                      
+2016-02-10T14:36:18.6004592+00:00 Get-Date -Format o                                                                                         
+2016-02-10T14.36.18.6014593+00.00 Get-Date -Format o | foreach {$_ -replace ":", "."}                                                        
+10/02/2016                        get-date -format d                                   ShortDatePattern                                      
+10 February 2016                  get-date -format D                                   LongDatePattern                                       
+10 February 2016 14:36            get-date -format f                                   Full date and time (long date and short time)         
+10 February 2016 14:36:18         get-date -format F                                   FullDateTimePattern (long date and long time)         
+10/02/2016 14:36                  get-date -format g                                   General (short date and short time)                   
+10/02/2016 14:36:18               get-date -format G                                   General (short date and long time)                    
+10 February                       get-date -format m                                   MonthDayPattern                                       
+2016-02-10T14:36:18.6134605+00:00 get-date -format o                                   Round-trip date/time pattern                          
+2016-02-10T14:36:18               get-date -format s                                   local SortableDateTimePattern (ISO 8601)              
+14:36                             get-date -format t                                   ShortTimePattern                                      
+14:36:18                          get-date -format T                                   LongTimePattern                                       
+2016-02-10 14:36:18Z              get-date -format u                                   UniversalSortableDateTimePattern                      
+10 February 2016 14:36:18         get-date -format U                                   Full date and time using universal time               
+February 2016                     get-date -format y                                   YearMonthPattern                                      
+10                                get-date -format "dd"                                Day of the month with leading zero                    
+Wed                               get-date -format "ddd"                               The abbreviated name of the day of the week.          
+Wednesday                         get-date -format "dddd"                              The full name of the day of the week                  
+                                  get-date -format "h"                                 The hour in a 12-hour clock, no leading zero          
+02                                get-date -format "hh"                                The hour in a 12-hour clock, leading zero             
+                                  get-date -format "H"                                 The hour in a 24-hour clock, no leading zero          
+14                                get-date -format "HH"                                The hour in a 24-hour clock, leading zero             
+36                                get-date -format "mm"                                Minute, leading zero                                  
+02                                get-date -format "MM"                                Month, leading zero                                   
+Feb                               get-date -format "MMM"                               AbbreviatedMonthNames.                                
+February                          get-date -format "MMMM"                              full MonthNames.                                      
+18                                get-date -format "ss"                                Second, leading zero                                  
+PM                                get-date -format "tt"                                am/pm                                                 
+16                                get-date -format "yy"                                YY                                                    
+2016                              get-date -format "yyy"                               YYY                                                   
+2016                              get-date -format "yyyy"                              YYYY                                                  
+c                                 get-date -format "\c"                                character                                             
+20160210143618                    get-date -format "yyyyMMddHHmmss"                    for filenames                                         
+
