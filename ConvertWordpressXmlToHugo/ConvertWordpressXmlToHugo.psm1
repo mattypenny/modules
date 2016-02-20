@@ -25,8 +25,8 @@ function  convert-wpToHugo{
 
 #>
   [CmdletBinding()]
-  Param( [xml][Alias ("xml")]$WordpressXML = "$wp_xml",
-         [string][Alias ("string")]$PostString = "ramone" ,
+  Param( [xml][Alias ("xml")]$WordpressXML = $wpxml,
+         [string][Alias ("string")]$PostString = "MizMaze" ,
          [string][Alias ("f")]$ContentFolder = "D:\hugo\sites\example.com\content",
          [string][Alias ("type")]$PostType = "post"
 ) 
@@ -35,6 +35,7 @@ function  convert-wpToHugo{
   write-startfunction 
 
   $MatchingWordPressPosts = get-wpMatchingWordpressPosts -WordPressXml $WordPressXML -PostString $Poststring -type $PostType
+  $MatchingWordPressPosts | measure-object
 
   foreach ($WordPressPost in $MatchingWordPressPosts)
   { 
@@ -49,6 +50,9 @@ function  convert-wpToHugo{
     write-debug "`$HugoFrontMatter: $HugoFrontMatter"
 
     [String]$PostBody = get-wpPostContentAsString -WordPressPostAsXML $WordPressPost
+
+    # Convert self-referential URLs to relative URLs - take this out after testing
+    $PostBody = $PostBody.replace("http://salisburyandstonehenge.net","")
 
     if ($ConvertFootnotes)
     {
@@ -330,10 +334,13 @@ function get-wpHugoFrontMatterAsString {
   }
 
   # the alias has to be a relative address
-  $LinkAsArray = $link.split('/')
-  $DomainName = "$LinkAsArray[0]//$LinkAsArray[2]"
-  $Alias = $Link.replace($DomainName, '')
-  write-debug "`$Alias: $Alias"
+  write-debug "`$Link: $Link"
+
+
+  # get the relative address for the Alias (Hugo redirection instruction
+  $DomainName = get-DomainNameFromURL $Link
+  $RelativeAddress = $Link.replace($DomainName, '')
+  write-debug "`$RelativeAddress: $RelativeAddress"
 
   [string]$category = $($link.split('/'))[3]
   
@@ -341,19 +348,19 @@ function get-wpHugoFrontMatterAsString {
   # using all the available metadata, except 'type' as I'm not having different types
   # of content
   $YamlString = @"
-title: "$titleh
+title: "$title"
 description: "$description"
 lastmod: "$(get-date -format "yyyy\-MM\-dd")"
 date: "$($postdate.Substring(0,10))"
 tags: [ $tagstring ]
 categories:
 - "$category"
-aliases: ["$Alias"]
+aliases: ["$RelativeAddress"]
 draft: No
 publishdate: "$postdate"
 weight: 0
 markup: "md"
-url: $Alias
+url: $RelativeAddress
 "@
  
   # write-debug "`$YamlString: $YamlString"
@@ -447,6 +454,36 @@ function get-wpHugoWeightFromWpURL {
   return $Weight
 
 }
+
+function get-DomainNameFromURL {
+<#
+.SYNOPSIS
+  Converts month as word to month in number string
+
+.PARAMETER FullAddress
+  
+
+.EXAMPLE
+  
+
+#>
+  [CmdletBinding()]
+  Param( [string][Alias ("url")]$FullAddress)
+
+  write-startfunction 
+
+  $FullAddressAsArray = $FullAddress.split('/')
+  $Http = $FullAddressAsArray[0]
+  $Domain = $FullAddressAsArray[2]
+  $FullDomain = "$Http`/`/$Domain"
+  write-debug "`$FullDomain: $FullDomain"
+  
+  write-endfunction 
+  return $FullDomain
+
+}
+
+
 
 function convert-monthToNumberString { 
 <#
