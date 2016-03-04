@@ -21,18 +21,23 @@ function  convert-wpToHugo{
     post      
 
 .EXAMPLE
-  Example of how to use this cmdlet
+  $wpxml = get-content D:\repair_websites\salisburywiltshireandstonehenge.wordpress.2015-10-03.xml
+  convert-wpToHugo -WordpressXML $wpxml -PostString Road
 
 #>
   [CmdletBinding()]
   Param( [xml][Alias ("xml")]$WordpressXML = $wpxml,
          [string][Alias ("string")]$PostString = "MizMaze" ,
          [string][Alias ("f")]$ContentFolder = "D:\hugo\sites\example.com\content",
-         [string][Alias ("type")]$PostType = "post"
+         [string][Alias ("type")]$PostType = "post",
+         [string][Alias ("file")]$WordPressXMLFile
 ) 
 
   
   write-startfunction 
+
+  # todo error if both xml and file name passed in
+  # todo call get-WordPressXMLFromWordPressXMLFile
 
   $MatchingWordPressPosts = get-wpMatchingWordpressPosts -WordPressXml $WordPressXML -PostString $Poststring -type $PostType
   $MatchingWordPressPosts | measure-object
@@ -43,7 +48,7 @@ function  convert-wpToHugo{
     [String]$HugoFileName = get-wpHugoFileName -WordPressPostAsXML $WordPressPost -ContentFolder $contentFolder
     write-debug "`$HugoFileName: $HugoFileName"
     [string]$WordPressLink = $WordPressPost.link
-    write-verbose "Converting $WordPressLink to $HugoFilename"
+    write-verbose "Creating $HugoFilename from $WordPressLink "
 
     
     [String]$HugoFrontMatter = get-wpHugoFrontMatterAsString -WordPressPostAsXML $WordPressPost
@@ -87,7 +92,33 @@ $PostBody
 
 }
 
+<#
+.Synopsis
+   gets contents of xml file into an XML variable
+.DESCRIPTION
+   Very simple function - just does 'get-content' into an xml variable. Only a function because it's handy to run in isolation
+.EXAMPLE
+   Example of how to use this cmdlet
+#>
+function get-WordPressXMLFromWordPressXMLFile
+{
+    [CmdletBinding()]
+    [Alias()]
+    [OutputType([int])]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   Position=0)]
+        $WordPressXMLFile = "D:\repair_websites\salisburywiltshireandstonehenge.wordpress.2015-10-03.xml" 
 
+    )
+
+    Process
+    {
+        [xml]$WordPressXML = get-content $WordPressXMLFile
+    }
+}
 <#
 vim: tabstop=2 softtabstop=2 shiftwidth=2 expandtab
 #>
@@ -192,8 +223,17 @@ function get-wpHugoFileName {
   write-debug "`$postname: $postname"
 
   [string]$link = $WordpressPostAsXml.link     
+  write-debug "`$link: $link"
   [string]$category = $($link.split('/'))[3]
   write-debug "`$Category: $Category"
+  <#
+     Changing 'streetnames' to 'roadnames'. There are more roads than streets
+     in Salisbury
+  #>
+  if ($category -eq 'streetnames')
+  {
+    $category = 'roadnames'
+  }
 
   [string]$FileName = $ContentFolder + '\' + $Category + '\' + $postname + '.md'
   write-debug "`$Filename: $Filename"
@@ -244,25 +284,8 @@ function get-wpHugoFrontMatterAsString {
 
     Content of the file goes Here
 
+  The xmlelement being passed in looks like this:
 
-
-  Todo: decide whether to use the front matter for anything else e.g. todo
-
-
-.PARAMETER folder
-  Folder 
-
-.EXAMPLE
-  Example of how to use this cmdlet
-
-.EXAMPLE
-  Another example of how to use this cmdlet
-#>
-  [CmdletBinding()]
-  Param( [system.xml.xmlelement][Alias ("x")]$WordpressPostAsXml   ) 
-
-  write-startfunction 
-  <#
   title          : Moberly Road, Salisbury
   link           : http://salisburyandstonehenge.net/streetnames/moberly-road-salisbury
   pubDate        : Sat, 01 Aug 2009 20:27:56 +0000
@@ -285,6 +308,26 @@ function get-wpHugoFrontMatterAsString {
   category       : {category, category, category, category...}
   postmeta       : {wp:postmeta, wp:postmeta, wp:postmeta, wp:postmeta...}
   comment        : {wp:comment, wp:comment, wp:comment, wp:comment...}
+  
+
+  Todo: decide whether to use the front matter for anything else e.g. todo
+
+
+.PARAMETER folder
+  Folder 
+
+.EXAMPLE
+  Example of how to use this cmdlet
+
+.EXAMPLE
+  Another example of how to use this cmdlet
+#>
+  [CmdletBinding()]
+  Param( [system.xml.xmlelement][Alias ("x")]$WordpressPostAsXml   ) 
+
+  write-startfunction 
+  <#
+    Extract the elements of the XMLElemnt into variables
   #>
 
 
@@ -310,10 +353,14 @@ function get-wpHugoFrontMatterAsString {
   $status         = $WordpressPostAsXml.status        
   $title          = $WordpressPostAsXml.title   
 
+  
+
+  <#
+    Build the list of comma seperated tags, then knock off the last ", "
+  #>
   $Tags = $WordPressPostAsXml | select category | select -ExpandProperty category | 
             ? domain -eq 'post_tag' | select nicename 
             select nicename 
-
   [string]$TagString = ""
   foreach ($T in $Tags)
   {
@@ -321,29 +368,74 @@ function get-wpHugoFrontMatterAsString {
     [string]$Tag = $T.nicename
     $TagString = "$Tagstring `"$Tag`", "  
   }
-  write-debug "`$TagString: $Tagstring"
-
-  # my blog had the category as the second element of the URL i.e.
-  # http://salisburyandstonehenge/on-this-day/Beatles-play-the-City-Hall
-  [string]$category = $($link.split('/'))[3]
-
-  # This function is pretty specific to http://salisburyandstonehenge.net!
-  if ($category -eq 'on-this-day')
+  if ($TagString.length)
   {
-    $weight = get-wpHugoWeightFromWpURL ($link)
+    $TagString = $TagString.substring(0, $TagString.length -2)
   }
 
-  # the alias has to be a relative address
-  write-debug "`$Link: $Link"
+  <#
+    Extract the category from the URL
+    my blog had the category as the second element of the URL i.e.
+    http://salisburyandstonehenge/on-this-day/Beatles-play-the-City-Hall
+  #>
+  [string]$category = $($link.split('/'))[3]
 
-
-  # get the relative address for the Alias (Hugo redirection instruction
+  <#
+    get the relative address for the Alias (Hugo redirection instruction)
+  #>
   $DomainName = get-DomainNameFromURL $Link
   $RelativeAddress = $Link.replace($DomainName, '')
+
+  if ($DomainName -eq 'http://salisburyandstonehenge.net')
+  {
+    <#
+      This function is pretty specific to http://salisburyandstonehenge.net!
+      The ordering of the on-this-day posts needs to be by the order of the 
+      event in the calendar year. The year of the event and the date the
+      post was published don't matter
+    #>
+    $weight = 0
+    if ($category -eq 'on-this-day')
+    {
+      $weight = get-wpHugoWeightFromWpURL ($link)
+    }
+
+    <#
+      Changing 'streetnames' to 'roadnames'. There are more roads than streets
+      in Salisbury
+    #>
+    if ($category -eq 'streetnames')
+    {
+      $category = 'roadnames'
+    }
+  }
+  
+  <#
+    format for date is YYYY-MM-DD. Hugo dpesn't like the time being there too
+    setting lastmod to the date that this script was run
+  #>
+  [string]$lastmod = $(get-date -format "yyyy\-MM\-dd")
+  [string]$date = "$($postdate.Substring(0,10))"
+  [string]$draft = "No"
+  [string]$publishdate = "$($postdate.substring(0, 10))"
+  [string]$markup = "md"
+
+  write-debug "`$title: $title"
+  write-debug "`$description: $description"
+  write-debug "`$lastmod: $lastmod"
+  write-debug "`$date: $date"
+  write-debug "`$tagstring: $tagstring" 
+  write-debug "`$category: $category"
+  write-debug "`$RelativeAddress: $RelativeAddress"
+  write-debug "`$draft: $draft"
+  write-debug "`$publishdate: $publishdate"
+  write-debug "`$weight: $weight"
+  write-debug "`$markup: $markup"
+  write-debug "`$Link: $Link"
+  write-debug "`$TagString: $Tagstring"
   write-debug "`$RelativeAddress: $RelativeAddress"
 
-  [string]$category = $($link.split('/'))[3]
-  
+
 
   # using all the available metadata, except 'type' as I'm not having different types
   # of content
@@ -351,14 +443,14 @@ function get-wpHugoFrontMatterAsString {
 title: "$title"
 description: "$description"
 lastmod: "$(get-date -format "yyyy\-MM\-dd")"
-date: "$($postdate.Substring(0,10))"
+date: "$date"
 tags: [ $tagstring ]
 categories:
 - "$category"
 aliases: ["$RelativeAddress"]
 draft: No
-publishdate: "$postdate"
-weight: 0
+publishdate: "$publishdate"
+weight: $weight
 markup: "md"
 url: $RelativeAddress
 "@
@@ -407,6 +499,7 @@ function get-wpHugoWeightFromWpURL {
   [CmdletBinding()]
   Param( [string][Alias ("url")]$WordpressUrl   ) 
 
+  $DebugPreference = "Continue"
   write-startfunction 
 
   write-debug "`$WordPressUrl: $WordpressURL"
@@ -450,6 +543,7 @@ function get-wpHugoWeightFromWpURL {
   write-debug "`$Weight: $Weight"
 
   write-endfunction 
+  $DebugPreference = "SilentlyContinue"
 
   return $Weight
 
