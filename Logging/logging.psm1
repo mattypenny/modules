@@ -18,10 +18,18 @@ function write-startfunction {
 
   [string]$Command = $CallingFunction.Command        
   [string]$Location = $CallingFunction.Location 
-  [string]$Arguments = $CallingFunction.Arguments       
+  [string]$Arguments = $CallingFunction.Arguments 
   # [string]$FunctionName = $CallingFunction.FunctionName
    
-  write-debug "$CallDate Start: $Location $Command $Arguments"
+  write-debug "$CallDate Start: $Command"
+  $Arguments = $Arguments.trimstart('{')
+  $Arguments = $Arguments.trimend('}')
+  $SplitArguments = $Arguments.split(',')
+  foreach ($A in $SplitArguments)
+  {
+    write-debug "- $($A.trimstart())"
+  }
+  write-debug "- $Location"
   return
 }
 
