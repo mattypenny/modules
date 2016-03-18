@@ -37,7 +37,7 @@ function  convert-wpToHugo{
   write-startfunction 
 
   # todo error if both xml and file name passed in
-  # todo call get-WordPressXMLFromWordPressXMLFile
+  # todo call 
 
   $MatchingWordPressPosts = get-wpMatchingWordpressPosts -WordPressXml $WordPressXML -PostString $Poststring -type $PostType
   $MatchingWordPressPosts | measure-object
@@ -181,7 +181,7 @@ comment        : {wp:comment, wp:comment, wp:comment, wp:comment...}
   #>
 
   # [xml]$wp_xml = get-content wp_exp.xml
-  $Nodes = select-xml -xml $WordpressXML -xpath "//channel/item" | select -expandproperty node | where-object title -like "*$PostString*" | where-object post_type -eq $PostType
+  $Nodes = select-xml -xml $WordpressXML -xpath "//channel/item" | select -expandproperty node | where-object link -like "*$PostString*" | where-object post_type -eq $PostType
 
   
   $nodes
@@ -437,16 +437,14 @@ function get-wpHugoFrontMatterAsString {
 
 
 
-  # using all the available metadata, except 'type' as I'm not having different types
-  # of content
   $YamlString = @"
 title: "$title"
 description: "$description"
 lastmod: "$(get-date -format "yyyy\-MM\-dd")"
 date: "$date"
 tags: [ $tagstring ]
-categories:
-- "$category"
+categories: 
+ - "$category"
 aliases: ["$RelativeAddress"]
 draft: No
 publishdate: "$publishdate"
