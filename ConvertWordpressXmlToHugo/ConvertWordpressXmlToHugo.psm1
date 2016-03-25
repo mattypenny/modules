@@ -602,30 +602,30 @@ function convert-monthToNumberString {
   # tried to do this with switch -regex, but it didn't work
   [string]$MonthAsNumber = switch ($MonthAsWord)
   { 
-        "Jan" {"01"} 
-        "January" {"01"} 
-        "Feb" {"02"} 
-        "February" {"02"} 
-        "Mar" {"03"} 
-        "March" {"03"} 
-        "Apr" {"04"} 
-        "April" {"04"} 
-        "May" {"05"} 
-        "Jun" {"06"} 
-        "June" {"06"} 
-        "Jul" {"07"} 
-        "July" {"07"} 
-        "Aug" {"08"} 
-        "August" {"08"} 
-        "Sep" {"09"} 
-        "September" {"09"} 
+        "Jan" {"1"} 
+        "January" {"1"} 
+        "Feb" {"2"} 
+        "February" {"2"} 
+        "Mar" {"3"} 
+        "March" {"3"} 
+        "Apr" {"4"} 
+        "April" {"4"} 
+        "May" {"5"} 
+        "Jun" {"6"} 
+        "June" {"6"} 
+        "Jul" {"7"} 
+        "July" {"7"} 
+        "Aug" {"8"} 
+        "August" {"8"} 
+        "Sep" {"9"} 
+        "September" {"9"} 
         "Oct" {"10"} 
         "October" {"10"} 
         "Nov" {"11"} 
         "November" {"11"} 
         "Dec" {"12"} 
         "December" {"12"} 
-        default {"Couldnt match the month"}
+        default {"Couldntmatchthemonth"}
   }
    
 
