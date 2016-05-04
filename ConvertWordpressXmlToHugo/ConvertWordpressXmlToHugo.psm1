@@ -24,6 +24,10 @@ function  convert-wpToHugo{
   $wpxml = get-content D:\repair_websites\salisburywiltshireandstonehenge.wordpress.2015-10-03.xml
   convert-wpToHugo -WordpressXML $wpxml -PostString Road
 
+.EXAMPLE
+
+  $wpxml = get-content D:\repair_websites\salisburywiltshireandstonehenge.wordpress.2015-10-03.xml
+  convert-wpToHugo -WordpressXML $wpxml -PostString finger -PostType Page
 #>
   [CmdletBinding()]
   Param( [xml][Alias ("xml")]$WordpressXML = $wpxml,
@@ -58,6 +62,11 @@ function  convert-wpToHugo{
 
     # Convert self-referential URLs to relative URLs - take this out after testing
     $PostBody = $PostBody.replace("http://salisburyandstonehenge.net","")
+
+    if ($ConvertBlockquotesToMarkdown)
+    {
+      $PostBody = convert-WordpressBlockquotesToMarkdown -Content $PostBody
+    }
 
     if ($ConvertFootnotes)
     {
@@ -676,6 +685,38 @@ function get-wpPostContentAsString {
 vim: tabstop=2 softtabstop=2 shiftwidth=2 expandtab
 #>
 
+function convert-WordpressBlockquotesToMarkdown {
+<#
+.SYNOPSIS
+  Convert the <blockquote> syntax to the '>' syntax
+
+.DESCRIPTION
+  Longer description
+
+.PARAMETER PostBody
+  PostBody as a string
+
+.EXAMPLE
+  [string]$PostBody = gc D:\hugo\sites\example.com\content\on-this-day\1st-august-lammas-day-or-petersfinger-day.md
+  convert-WordpressBlockquotesToMarkdown $PostBody
+
+#>
+  [CmdletBinding()]
+  Param( [string]$PostBody,
+         [string][Alias ("Start")]$StartBlockQuoteTag = "<blockquote>",
+         [string][Alias ("End")]$EndBlockQuoteTag = "</blockquote>")
+)
+
+  write-startfunction 
+
+  $PostBody
+  # in progress!!!!!!
+
+  write-endfunction 
+
+}
+
+set-alias temp get-template
 
 
 function convert-WordpressFootnotesToInternalLinks { 
@@ -784,4 +825,81 @@ vim: tabstop=2 softtabstop=2 shiftwidth=2 expandtab ignorecase
 #>
 
 
+
+function update-HugoPageCorrectFootnotes {
+<#
+.SYNOPSIS
+  One-line description
+
+.DESCRIPTION
+  Longer description
+
+.PARAMETER folder
+  Folder 
+
+.EXAMPLE
+  Example of how to use this cmdlet
+
+#>
+  [CmdletBinding()]
+  Param( [string][Alias ("file")]$HugoMarkdownFile,
+         [string][Alias ("HugoString")]$HugoPageAsString,
+         [string][Alias ("Start")]$StartFootnoteTag,
+         [string][Alias ("End")]$EndFootnoteTag)
+
+  write-startfunction
+  
+  if ($HugoMarkDownFile -ne "")
+  {
+      $HugoPageAsString = get-content $HugoMarkdownFile -raw
+  }
+  
+  $hugoPageAsString= $HugoPageAsString.replace($EndFootnoteTag, $StartFootnoteTag) 
+
+  [array]$HugoPageAsArray = $HugoPageAsString -split "$StartFootNoteTag"
+
+  write-debug "Number of bits of text is $($HugoPageAsArray.length)"
+  $BodyString = ""
+  $FootNoteString = ""
+
+  for ($i = 0; $i -lt $HugoPageAsArray.length ; $i++)
+  {
+      [string]$ConcatenateString = $HugoPageAsArray[$i]
+      if ( $i % 2 -eq 0 )
+      {
+          write-debug "Thats even $i"
+          $BodyString = "$BodyString$ConcatenateString"
+      }
+      else
+      {
+          write-debug "Thats odd $i"
+          $FootNoteNumber = 1 + (($i - 1 ) / 2) 
+          write-debug "`$FootnoteNumber: $FootNoteNumber"
+
+          $BodyString = @"
+$BodyString<a name="Source$FootnoteNumber" href="#Note$FootnoteNumber">[$FootNoteNumber]</a>
+"@
+
+          $FootnoteString = @"
+$FootNoteString
+
+<a  href="#Source$FootnoteNumber" name=`"Note$FootnoteNumber`">`[$FootNoteNumber`]</a> $ConcatenateString
+"@
+      }
+  }
+
+  $ReconstitutedString = "$BodyString`n$FootNoteString"
+
+  if ($HugoMarkDownFile -ne "")
+  {
+      remove-item D:\hugo\sites\example.com\content\on-this-day\$HugoMarkdownFile
+      set-content -LiteralPath $HugoMarkDownFile -value $ReconstitutedString
+  }
+
+
+  
+  # set-content -value $HugoPageAsString -literalpath $HugoMarkdownFile
+  write-endfunction
+  return $ReconstitutedString
+}
 
