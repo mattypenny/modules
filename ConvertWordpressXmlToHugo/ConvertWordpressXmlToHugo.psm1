@@ -1,4 +1,4 @@
-import-module Logging
+# import-module Logging
 function  convert-wpToHugo{ 
 <#
 .SYNOPSIS
@@ -34,7 +34,10 @@ function  convert-wpToHugo{
          [string][Alias ("string")]$PostString = "MizMaze" ,
          [string][Alias ("f")]$ContentFolder = "D:\hugo\sites\example.com\content",
          [string][Alias ("type")]$PostType = "post",
-         [string][Alias ("file")]$WordPressXMLFile
+         [string][Alias ("file")]$WordPressXMLFile,
+         [switch]$ConvertFootnotes,
+         [switch]$ConvertBlockquotes,
+         [switch]$ConvertTables
 ) 
 
   
@@ -63,21 +66,22 @@ function  convert-wpToHugo{
     # Convert self-referential URLs to relative URLs - take this out after testing
     $PostBody = $PostBody.replace("http://salisburyandstonehenge.net","")
 
-    if ($ConvertBlockquotesToMarkdown)
+    if ($ConvertBlockquotes)
     {
-      $PostBody = convert-WordpressBlockquotesToMarkdown -Content $PostBody
+      $PostBody = convert-WordpressBlockquotesToMarkdown -PostBody $PostBody
     }
 
     if ($ConvertFootnotes)
     {
-      $PostBody = convert-WordpressFootnotesToInternalLinks -Content $PostBody
+      $PostBody = convert-WordpressFootnotesToInternalLinks -HugoPageAsString $PostBody
     }
 
-    if ($ConvertWordpressTableToMarkdownTable)
+    if ($ConvertTables)
     {
       $PostBody = convert-WordpressWordpressTableToMarkdownTable -Content $PostBody
     }
 
+    # todo: generate table of contents?
     if ($FlagLink)
     {
       $Links = get-wpLinks $PostBody
@@ -429,7 +433,7 @@ function get-wpHugoFrontMatterAsString {
   [string]$publishdate = "$($postdate.substring(0, 10))"
   [string]$markup = "md"
 
-  write-debug "`$title: $title"
+  write-verbose "`$title: $title"
   write-debug "`$description: $description"
   write-debug "`$lastmod: $lastmod"
   write-debug "`$date: $date"
@@ -652,8 +656,8 @@ function get-wpPostContentAsString {
 .DESCRIPTION
   Longer description
 
-.PARAMETER folder
-  Folder 
+.PARAMETER WordPressPostAsXml
+  Contents of xml file read into an xml variable, then cut down I think???
 
 .EXAMPLE
   Example of how to use this cmdlet
@@ -670,7 +674,7 @@ function get-wpPostContentAsString {
   # write-debug "`$Encoded"
 
   [string]$PostBody = $Encoded | select -expandproperty `#cdata-section 
-  # write-debug "`$PostBody"
+  # write-debug "`$PostBody: $PostBody"
 
   write-endfunction 
   return $PostBody
@@ -680,10 +684,6 @@ function get-wpPostContentAsString {
 
 
 
-
-<#
-vim: tabstop=2 softtabstop=2 shiftwidth=2 expandtab
-#>
 
 function convert-WordpressBlockquotesToMarkdown {
 <#
@@ -703,56 +703,50 @@ function convert-WordpressBlockquotesToMarkdown {
 #>
   [CmdletBinding()]
   Param( [string]$PostBody,
-         [string][Alias ("Start")]$StartBlockQuoteTag = "<blockquote>",
-         [string][Alias ("End")]$EndBlockQuoteTag = "</blockquote>")
-)
+         [string]$StartBlockQuoteTag = "<blockquote>",
+         [string]$EndBlockQuoteTag = "</blockquote>")
 
   write-startfunction 
 
-  $PostBody
-  # in progress!!!!!!
+  write-debug "Length of `$postbody: $($PostBody.Length)"
+  $ReturnString = ""
+  
+  $HugoPageAsArrayOfParagraphs = $PostBody -split "^|$StartBlockQuoteTag", 0, "multiline"
+
+  write-debug "Number of items in `$HugoPageAsArrayofParagraphs: $($HugoPageAsArrayofParagraphs.length)"
+  Foreach ($Line in $HugoPageAsArrayOfParagraphs) 
+  {
+    write-debug "Length of `$Line: $($Line.Length)"
+    if ($Line -like "*$StartBlockQuoteTag*")
+    {
+      $BlockquoteOrNullString = "> "
+    }
+    elseif ($Line -like "*$EndBlockQuoteTag*")
+    {
+      $BlockquoteOrNullString = ""
+    }
+
+    $ReturnString = @"
+$ReturnString
+$BlockQuoteOrNullString$Line
+
+"@
+
+    write-debug "Length of `$ReturnString: $($ReturnString.Length)"
+  }                 
+  
+  $ReturnString = $ReturnString.Replace($StartBlockQuoteTag, '')
+  $ReturnString = $ReturnString.Replace($EndBlockQuoteTag, '')
+ 
+  write-debug "Length of `$ReturnString: $($ReturnString.Length)"
 
   write-endfunction 
+  return $ReturnString
 
 }
 
-set-alias temp get-template
 
 
-function convert-WordpressFootnotesToInternalLinks { 
-<#
-.SYNOPSIS
-  One-line description
-
-.DESCRIPTION
-  Longer description
-
-.PARAMETER folder
-  Folder 
-
-.EXAMPLE
-  Example of how to use this cmdlet
-
-.EXAMPLE
-  Another example of how to use this cmdlet
-#>
-  [CmdletBinding()]
-  Param( [string][Alias ("f")]$PostAsString = "$pwd"  ) 
-
-  write-startfunction 
-
-
-
-  write-endfunction 
-
-}
-
-set-alias temp get-template
-
-
-<#
-vim: tabstop=2 softtabstop=2 shiftwidth=2 expandtab
-#>
 
 
 
@@ -826,7 +820,7 @@ vim: tabstop=2 softtabstop=2 shiftwidth=2 expandtab ignorecase
 
 
 
-function update-HugoPageCorrectFootnotes {
+function convert-WordpressFootnotesToInternalLinks {
 <#
 .SYNOPSIS
   One-line description
@@ -844,8 +838,8 @@ function update-HugoPageCorrectFootnotes {
   [CmdletBinding()]
   Param( [string][Alias ("file")]$HugoMarkdownFile,
          [string][Alias ("HugoString")]$HugoPageAsString,
-         [string][Alias ("Start")]$StartFootnoteTag,
-         [string][Alias ("End")]$EndFootnoteTag)
+         [string][Alias ("Start")]$StartFootnoteTag = "<ref>",
+         [string][Alias ("End")]$EndFootnoteTag = "</ref>")
 
   write-startfunction
   
@@ -860,7 +854,7 @@ function update-HugoPageCorrectFootnotes {
 
   write-debug "Number of bits of text is $($HugoPageAsArray.length)"
   $BodyString = ""
-  $FootNoteString = ""
+  $FootNoteString = "### Footnotes"
 
   for ($i = 0; $i -lt $HugoPageAsArray.length ; $i++)
   {
@@ -888,7 +882,11 @@ $FootNoteString
       }
   }
 
-  $ReconstitutedString = "$BodyString`n$FootNoteString"
+  $ReconstitutedString = "$BodyString"
+  if ($FootnoteString -ne "### Footnotes")
+  {
+      $ReconstitutedString = "$BodyString`n$FootNoteString"
+  }
 
   if ($HugoMarkDownFile -ne "")
   {
