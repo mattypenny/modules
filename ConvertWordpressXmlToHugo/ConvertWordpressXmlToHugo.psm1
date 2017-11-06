@@ -97,6 +97,16 @@ $PostBody
 "@
                           
     # write-debug "out-file -InputObject $HugoPostString -FilePath $HugoFileName"
+    $OutFolder = [System.IO.Path]::GetDirectoryName($HugoFileName) 
+
+    if (test-path $OutFolder)
+    {
+	#
+    }
+    else
+    {
+	mkdir $OUtfolder
+    }
     out-file -InputObject $HugoPostString -FilePath $HugoFileName -encoding default
 
     write-endfunction 
@@ -429,7 +439,7 @@ function get-wpHugoFrontMatterAsString {
   #>
   [string]$lastmod = $(get-date -format "yyyy\-MM\-dd")
   [string]$date = "$($postdate.Substring(0,10))"
-  [string]$draft = "No"
+  [string]$draft = "Yes"
   [string]$publishdate = "$($postdate.substring(0, 10))"
   [string]$markup = "md"
 
@@ -459,7 +469,7 @@ tags: [ $tagstring ]
 categories: 
  - "$category"
 aliases: ["$RelativeAddress"]
-draft: No
+draft: Yes
 publishdate: "$publishdate"
 weight: $weight
 markup: "md"
@@ -823,16 +833,16 @@ vim: tabstop=2 softtabstop=2 shiftwidth=2 expandtab ignorecase
 function convert-WordpressFootnotesToInternalLinks {
 <#
 .SYNOPSIS
-  One-line description
+  Converts footnotes in <ref></ref> or other specified format into internal links
 
 .DESCRIPTION
   Longer description
 
-.PARAMETER folder
+.PARAMETER HugoMarkDownFile
   Folder 
 
 .EXAMPLE
-  Example of how to use this cmdlet
+  convert-WordpressFootnotesToInternalLinks -HugoMarkdownFile .\26th-july-1945-labour-win-post-war-election.md 
 
 #>
   [CmdletBinding()]
@@ -843,8 +853,11 @@ function convert-WordpressFootnotesToInternalLinks {
 
   write-startfunction
   
+  $HugoMarkdownFile = $(dir $HugoMarkdownFile).fullname
+
   if ($HugoMarkDownFile -ne "")
   {
+      backup-FileToOldFolder -file $(dir $HugoMarkdownFile).fullname
       $HugoPageAsString = get-content $HugoMarkdownFile -raw
   }
   
@@ -890,7 +903,7 @@ $FootNoteString
 
   if ($HugoMarkDownFile -ne "")
   {
-      remove-item D:\hugo\sites\example.com\content\on-this-day\$HugoMarkdownFile
+      remove-item $HugoMarkdownFile
       set-content -LiteralPath $HugoMarkDownFile -value $ReconstitutedString
   }
 
